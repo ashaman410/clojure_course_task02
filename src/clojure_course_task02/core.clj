@@ -2,12 +2,19 @@
   (:import java.io.File)
   (:gen-class))
 
+;(defn find-files [pattern directory]
+;  (->> (file-seq (File. directory))
+;       (pmap #(let [file-name (. % getName)]
+;                (when-not (nil? (re-find (re-pattern pattern) file-name)) file-name)))
+;       (remove nil?)))
 
 (defn find-files [pattern directory]
-  (->> (file-seq (File. directory))
-       (pmap #(let [file-name (. % getName)]
-               (when-not (nil? (re-find (re-pattern pattern) file-name)) file-name)))
-       (remove nil?)))
+  (let [pred #(let [file-name (.getName %)] 
+                (when-not (nil? (re-find (re-pattern pattern) file-name)) file-name)),
+        top-dir-files (.listFiles (File. directory))]
+    (->> (map pred top-dir-files)
+         (concat (flatten (pmap #(map pred (file-seq %))(filter #(.isDirectory %) top-dir-files))))         
+         (remove nil?))))
 
 (defn usage []
   (println "Usage: $ run.sh file_name path"))
